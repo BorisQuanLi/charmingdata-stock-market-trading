@@ -1,0 +1,24 @@
+# Langflow dependencies
+langflow>=0.6.1
+langchain>=0.0.335
+pydantic>=2.5.0
+
+# Vector DB connection
+pymongo>=4.5.0
+motor>=3.3.0  # Async MongoDB driver
+
+# SEC EDGAR processing 
+aiohttp>=3.8.5
+beautifulsoup4>=4.12.0
+lxml>=4.9.3
+
+# Embedding models
+openai>=1.3.0
+sentence-transformers>=2.2.2
+
+# Visualization
+plotly>=5.18.0
+pandas>=2.0.0
+
+# DigitalOcean SDK
+python-digitalocean>=1.17.0
