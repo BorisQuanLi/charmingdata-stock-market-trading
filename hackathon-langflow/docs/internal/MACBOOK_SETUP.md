@@ -41,4 +41,58 @@ For dependency resolution issues, clear your pip cache:
 
 For more details, see the Langflow installation documentation
 
+### Running the Browserbase MCP Server on MacOS
+
+1. **Install Node.js (v16+ recommended)**
+   - Use [nvm](https://github.com/nvm-sh/nvm) or Homebrew:
+     ```sh
+     nvm install stable
+     nvm use stable
+     node -v   # Confirm version is 16.x or higher
+     ```
+
+2. **Clone the MCP server repo and install dependencies**
+   ```sh
+   git clone https://github.com/browserbase/mcp-server-browserbase.git
+   cd mcp-server-browserbase/browserbase
+   npm install
+   ```
+
+3. **Set your Browserbase API credentials**
+   - Obtain your API key and Project ID from your [Browserbase dashboard](https://www.browserbase.com/).
+   - Export them in your terminal:
+     ```sh
+     export BROWSERBASE_API_KEY=your_actual_api_key
+     export BROWSERBASE_PROJECT_ID=your_actual_project_id
+     ```
+
+4. **Start the MCP server on port 3000**
+   ```sh
+   node cli.js --browserbaseApiKey $BROWSERBASE_API_KEY --browserbaseProjectId $BROWSERBASE_PROJECT_ID --port 3000
+   ```
+   - You should see:
+     ```
+     Listening on http://localhost:3000
+     Put this in your client config:
+     {
+       "mcpServers": {
+         "browserbase": {
+           "url": "http://localhost:3000/sse"
+         }
+       }
+     }
+     ```
+
+5. **Test the server**
+   - Visit [http://localhost:3000/](http://localhost:3000/) in your browser.
+   - You should see an SSE event stream (e.g., `event: endpoint`).
+
+6. **Client configuration**
+   - Use the provided `"url": "http://localhost:3000/sse"` in your client or agent configuration.
+
+---
+
+**Troubleshooting:**
+- If you see errors about missing environment variables, double-check your API key and Project ID.
+- If port 3000 is in use, specify a different port with `--port <number>`.
 

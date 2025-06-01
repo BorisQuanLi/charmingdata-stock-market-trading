@@ -37,6 +37,14 @@ This project combines SEC EDGAR financial data extraction with Langflow agent ca
 
 ---
 
+## About This Directory
+
+This `hackathon-langflow/` folder is a self-contained, ad hoc project for the Hacking Agents Hackathon (NYC, May 2025).
+It is intentionally placed inside the main project repo [`charmingdata-stock-market-trading`](https://github.com/charmingdata/stock-market-trading), which is an open-source group project.
+
+This structure allows for rapid prototyping and easy integration with the main codebase, while keeping hackathon-specific code and dependencies isolated.
+
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -52,6 +60,16 @@ This project combines SEC EDGAR financial data extraction with Langflow agent ca
    pip install -r hackathon-langflow/requirements.txt
    ```
 3. Set up cloud resources (DigitalOcean or Astra DB)
+
+---
+
+### Virtual Environment
+
+We recommend using a Python virtual environment for dependencies, launched outside the project repo, at the same directory level:
+
+```sh
+python3 -m venv ../../.venv-langflow #or whatever descriptive namme our desire
+source ../../.venv-langflow/bin/activate
 
 ---
 
