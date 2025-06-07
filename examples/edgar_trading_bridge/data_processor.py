@@ -7,6 +7,8 @@ for trading analysis and strategy application.
 
 import logging
 import pandas as pd
+import os
+from datetime import datetime
 from typing import Dict, List, Optional
 
 from src.edgar.models import FinancialStatementItems
@@ -69,6 +71,23 @@ def financial_metrics_to_df(financial_data: List[FinancialStatementItems]) -> pd
 
 def save_financial_data_csv(financial_df: pd.DataFrame, output_path: str = "financial_statements.csv") -> None:
     """Save financial data with additional metadata for debugging."""
+    def _sanitize_output_path(path: str) -> str:
+        # Allow only writing to the current directory (or a subdirectory within it).
+        # Disallow absolute paths and parent directory traversal.
+        # For even stricter, you could force all files into a "data" subdirectory.
+        base_dir = os.path.abspath(os.getcwd())
+        abs_target = os.path.abspath(path)
+        # Optionally, change base_dir to a specific data folder (e.g., os.path.join(base_dir, "data"))
+        if not abs_target.startswith(base_dir + os.sep):
+            raise ValueError("Invalid output path: Target file must be within the current working directory.")
+        if os.path.isabs(path):
+            raise ValueError("Absolute paths are not allowed for output_path.")
+        if ".." in os.path.normpath(path).split(os.sep):
+            raise ValueError("Path traversal is not allowed in output_path.")
+        return abs_target
+
+    sanitized_path = _sanitize_output_path(output_path)
+
     # Add extraction timestamp
     financial_df['extraction_time'] = datetime.now().isoformat()
     
@@ -79,12 +98,12 @@ def save_financial_data_csv(financial_df: pd.DataFrame, output_path: str = "fina
     )
     
     # Save with more detailed headers
-    with open(output_path, 'w') as f:
+    with open(sanitized_path, 'w') as f:
         f.write("# SEC EDGAR Financial Statement Extract\n")
         f.write(f"# Generated: {datetime.now()}\n")
         f.write(f"# Companies: {', '.join(financial_df['symbol'].unique())}\n")
         f.write(f"# Years: {', '.join(map(str, financial_df['fiscal_year'].unique()))}\n\n")
     
-    financial_df.to_csv(output_path, mode='a', index=False)
+    financial_df.to_csv(sanitized_path, mode='a', index=False)
     
-    print(f"Financial data saved to {output_path}")
+    print(f"Financial data saved to {sanitized_path}")
