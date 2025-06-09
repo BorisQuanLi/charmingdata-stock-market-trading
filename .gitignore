@@ -1,3 +1,10 @@
+# Private working documents in git branch pensar-security-validation
+/pensar_ai_security_scanning_documentation/
+# Exception
+!/pensar_ai_security_scanning_documentation/PENSAR-AI-SECURITY-ASSESSMENT-REPORT.md
+# When ready to publish:
+# mv pensar_ai_security_scanning_documentation/PENSAR-AI-SECURITY-ASSESSMENT-REPORT.md ./
+
 # Python virtual environments
 venv_mcp_edgar/
 venv/
