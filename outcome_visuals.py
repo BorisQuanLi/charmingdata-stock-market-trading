@@ -3,6 +3,22 @@ import numpy as np
 import plotly.express as px
 from dash import Dash, dcc, html, dash_table, Input, Output
 
+import base64
+from functools import wraps
+from flask import request, Response
+
+# --- Helper: Sanitize for Plotly Title to prevent XSS ---
+def sanitize_for_plotly_title(s):
+    if not isinstance(s, str):
+        s = str(s)
+    return (
+        s.replace('&', '&amp;')
+         .replace('<', '&lt;')
+         .replace('>', '&gt;')
+         .replace('\"', '&quot;')
+         .replace("'", '&#x27;')
+    )
+
 # --- 1. Load and preprocess the data ---
 
 df = pd.read_csv("standardized-executed-trades.csv")
@@ -191,6 +207,39 @@ app.layout = html.Div([
     )
 ], style={'backgroundColor': '#f4f6fb', 'minHeight': '100vh', 'paddingBottom': 40})
 
+# --- Basic Auth Implementation ---
+
+USERNAME = "admin"
+PASSWORD = "change_this_password"  # Please change in production!
+
+def check_auth(auth_header):
+    if not auth_header or not auth_header.startswith('Basic '):
+        return False
+    try:
+        # Decode the credentials from base64
+        encoded = auth_header.split(' ', 1)[1].strip()
+        decoded = base64.b64decode(encoded).decode('utf-8')
+        user, pw = decoded.split(':', 1)
+        return user == USERNAME and pw == PASSWORD
+    except Exception:
+        return False
+
+def authenticate():
+    """Sends a 401 response that enables basic auth"""
+    return Response(
+        'Authentication required.', 401,
+        {'WWW-Authenticate': 'Basic realm="Login Required"'}
+    )
+
+@app.server.before_request
+def require_authentication():
+    # You can add here paths to exclude from authentication if you want,
+    # but by default, all endpoints (including Dash's webpack/assets) are protected.
+    auth_header = request.headers.get('Authorization')
+    if not check_auth(auth_header):
+        return authenticate()
+    # else: let Flask/Dash handle the request
+
 # --- 4. Callbacks for interactivity ---
 
 @app.callback(
@@ -206,11 +255,13 @@ def update_dashboard(selected_month):
     if not selected_month:
         return dash.no_update, dash.no_update, dash.no_update, []
     final_outcomes_df = analyze_month(selected_month)
+    # Escape the selected_month for use in Plotly title
+    safe_selected_month = sanitize_for_plotly_title(selected_month)
     # Pie chart
     fig_pie = px.pie(
         final_outcomes_df,
         names='Outcome',
-        title=f'{selected_month} Initial Positions Outcomes',
+        title=f'{safe_selected_month} Initial Positions Outcomes',
         color='Outcome',
         color_discrete_map=outcome_colors,
         hole=0.4
@@ -227,7 +278,7 @@ def update_dashboard(selected_month):
         x='Outcome',
         y='Outcome_dollar',
         color='Outcome',
-        title=f'Total P&L by Outcome ({selected_month})',
+        title=f'Total P&L by Outcome ({safe_selected_month})',
         color_discrete_map=outcome_colors
     )
     fig_bar.update_layout(
@@ -241,7 +292,7 @@ def update_dashboard(selected_month):
         x='Initial_Action_Type',
         y='Outcome_dollar',
         color='Initial_Action_Type',
-        title=f'Total P&L: Long vs Short ({selected_month})',
+        title=f'Total P&L: Long vs Short ({safe_selected_month})',
         color_discrete_map=type_colors
     )
     fig_long_short.update_layout(
