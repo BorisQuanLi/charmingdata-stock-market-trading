@@ -45,3 +45,17 @@ export function SecEdgarStack({ stack }: StackContext) {
   });
 }
 
+const fetchData = async () => {
+  const res = await fetch("https://your-api-endpoint/extract", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ticker: "AAPL",
+      form_type: "10-Q",
+      fiscal_year: 2024,
+      fiscal_quarter: 1,
+    }),
+  });
+  const data = await res.json();
+  setData(data);
+};
