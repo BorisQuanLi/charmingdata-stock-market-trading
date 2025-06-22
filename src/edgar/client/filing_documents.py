@@ -3,6 +3,56 @@ from typing import Dict, Any
 from .scraper import EdgarScraper
 from .session import MCPServerConnectionError
 
+import socket
+import ipaddress
+from urllib.parse import urlparse
+
+def _is_public_sec_url(url: str) -> bool:
+    """
+    Validate that the provided URL is a secure SEC location, with scheme "https"
+    and netloc "www.sec.gov", and its resolved IP addresses are not private/special-use.
+
+    Args:
+        url: The URL to check
+
+    Returns:
+        bool: True if the URL is acceptable, False otherwise
+
+    Raises:
+        ValueError: If the URL is not deemed safe
+    """
+    SEC_ALLOWED_HOST = "www.sec.gov"
+
+    parsed = urlparse(url)
+    # Only allow HTTPS SEC
+    if parsed.scheme.lower() != "https":
+        raise ValueError("Only HTTPS SEC URLs are allowed.")
+
+    if parsed.netloc.lower() != SEC_ALLOWED_HOST:
+        raise ValueError("Only URLs with netloc www.sec.gov are allowed.")
+
+    # Resolve the hostname and ensure no private/special-use IPs
+    try:
+        for res in socket.getaddrinfo(parsed.hostname, None):
+            sockaddr = res[4]
+            ip = sockaddr[0]
+            # IPv4 or IPv6
+            ip_obj = ipaddress.ip_address(ip)
+            if (
+                ip_obj.is_private
+                or ip_obj.is_loopback
+                or ip_obj.is_link_local
+                or ip_obj.is_multicast
+                or ip_obj.is_reserved
+                or ip_obj.is_unspecified
+                or ip_obj.is_site_local  # Deprecated, but included for thoroughness
+                or (hasattr(ip_obj, 'is_global') and not ip_obj.is_global)
+            ):
+                raise ValueError("SEC URL resolves to non-public IP address")
+    except socket.gaierror:
+        raise ValueError("Failed to resolve SEC hostname for SSRF protection")
+    return True
+
 async def get_filing_by_index(
     self,
     cik: str,
@@ -229,6 +279,8 @@ async def get_filing_by_cik(
         ConnectionError: If MCP server request fails
     """
     filing_url = await self._get_filing_url(cik, form_type, year)
+    _is_public_sec_url(filing_url)  # Will raise ValueError if not valid/allowed
+
     if not await self.navigate(filing_url):
         raise MCPServerConnectionError(self.mcp_server_url, "Failed to navigate to filing URL")
     
